@@ -1,0 +1,43 @@
+x-app: &app
+  build: .
+  environment:
+    BASE_URL: http://localhost:8080
+    REDIS_URL: redis://redis:6379
+    DYNAMO_ENDPOINT: http://dynamodb:8000
+    AWS_REGION: us-east-1
+  depends_on:
+    redis:
+      condition: service_started
+    init-tables:
+      condition: service_completed_successfully
+  restart: unless-stopped
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["${REDIS_HOST_PORT:-6379}:6379"]
+
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+    ports: ["${DYNAMO_HOST_PORT:-8000}:8000"]
+
+  init-tables:
+    <<: *app
+    command: ["node", "scripts/create-tables.js"]
+    depends_on: [dynamodb]
+    restart: "no"
+
+  url-service:
+    <<: *app
+    command: ["node", "src/url-service/server.js"]
+    ports: ["3000:3000"]
+
+  redirect-service:
+    <<: *app
+    command: ["node", "src/redirect-service/server.js"]
+    ports: ["8080:8080"]
+
+  analytics-worker:
+    <<: *app
+    command: ["node", "src/analytics-worker/worker.js"]
