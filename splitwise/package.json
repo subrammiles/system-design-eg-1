@@ -1,0 +1,24 @@
+{
+  "name": "splitwise",
+  "version": "1.0.0",
+  "description": "Splitwise-style expense sharing: ledger-first design, integer money, 4 split types, pairwise balances, debt simplification, idempotency, reversible edits, reconciliation",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "api": "node src/api/server.js",
+    "outbox-publisher": "node src/workers/outboxPublisher.js",
+    "notification-worker": "node src/workers/notificationWorker.js",
+    "balance-projector": "node src/workers/balanceProjector.js",
+    "reconciler": "node src/workers/reconciler.js",
+    "init": "node scripts/init.js",
+    "demo": "node scripts/demo.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ioredis": "^5.4.1",
+    "pg": "^8.13.0"
+  }
+}

@@ -1,0 +1,53 @@
+x-app: &app
+  build: .
+  environment:
+    AUTH_SECRET: dev-only-secret-change-me
+    DATABASE_URL: postgres://splitwise:splitwise@postgres:5432/splitwise
+    REDIS_URL: redis://redis:6379
+    RECONCILE_INTERVAL_MS: "10000"
+  depends_on:
+    init:
+      condition: service_completed_successfully
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: splitwise, POSTGRES_PASSWORD: splitwise, POSTGRES_DB: splitwise }
+    ports: ["${PG_HOST_PORT:-5432}:5432"]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"] # event stream must survive restarts
+    ports: ["${REDIS_HOST_PORT:-6379}:6379"]
+    restart: unless-stopped
+
+  init:
+    <<: *app
+    command: ["node", "scripts/init.js"]
+    depends_on: [postgres]
+    restart: "no"
+
+  api:
+    <<: *app
+    command: ["node", "src/api/server.js"]
+    ports: ["${API_HOST_PORT:-3000}:3000"]
+    deploy: { replicas: 1 } # stateless: scale freely behind a load balancer
+
+  outbox-publisher:
+    <<: *app
+    command: ["node", "src/workers/outboxPublisher.js"]
+    deploy: { replicas: 2 } # one leader + hot standby
+
+  balance-projector:
+    <<: *app
+    command: ["node", "src/workers/balanceProjector.js"]
+
+  notification-worker:
+    <<: *app
+    command: ["node", "src/workers/notificationWorker.js"]
+
+  reconciler:
+    <<: *app
+    command: ["node", "src/workers/reconciler.js"]

@@ -1,0 +1,62 @@
+# ---- Node.js (url-shortener, web-crawler, messaging, ...) ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm/
+.pnpm-store/
+*.tgz
+
+# ---- Environment / secrets ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# ---- Logs, test output, coverage ----
+logs/
+*.log
+coverage/
+.nyc_output/
+test-results/
+*.lcov
+
+# ---- Build output / caches ----
+dist/
+build/
+out/
+.cache/
+tmp/
+*.tmp
+
+# ---- Local data from docker volumes or local runs ----
+data/
+*.rdb
+*.aof
+appendonlydir/
+
+# ---- Editors / IDEs ----
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- draw.io temp / backup files (keep the .drawio diagrams themselves) ----
+*.drawio.bkp
+*.drawio.dtmp
+.$*.drawio.bkp
+.$*.drawio.dtmp
+
+# ---- Claude Code local settings ----
+.claude/settings.local.json
