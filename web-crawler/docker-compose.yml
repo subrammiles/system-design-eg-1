@@ -1,0 +1,75 @@
+x-app: &app
+  build: .
+  environment: &env
+    REDIS_URL: redis://redis:6379
+    DYNAMO_ENDPOINT: http://dynamodb:8000
+    S3_ENDPOINT: http://s3:9090
+    AWS_REGION: us-east-1
+    # Demo settings: crawl only the local test site, quickly. Remove ALLOWED_HOSTS and
+    # ALLOW_PRIVATE_NETWORKS (and raise the delays) before pointing it at the real web.
+    ALLOWED_HOSTS: site-a:5000,site-b:5000
+    ALLOW_PRIVATE_NETWORKS: "true"
+    DEFAULT_HOST_DELAY_MS: "100"
+    MAX_URLS_PER_PATTERN: "8"   # calendar trap stops here, before MAX_DEPTH
+    RETRY_BASE_MS: "2000"
+    RECRAWL_INITIAL_SECONDS: "60"
+    RECRAWL_MIN_SECONDS: "30"
+  depends_on:
+    redis:
+      condition: service_started
+    init:
+      condition: service_completed_successfully
+  restart: unless-stopped
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"] # frontier must survive restarts
+    ports: ["${REDIS_HOST_PORT:-6379}:6379"]
+
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    restart: unless-stopped
+    command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
+    ports: ["${DYNAMO_HOST_PORT:-8000}:8000"]
+
+  s3:
+    image: adobe/s3mock:3.12.0 # local S3 stand-in; use real Amazon S3 in production
+    restart: unless-stopped
+    ports: ["${S3_HOST_PORT:-9090}:9090"]
+
+  init:
+    <<: *app
+    command: ["node", "scripts/init.js"]
+    depends_on: [dynamodb, s3]
+    restart: "no"
+
+  test-site:
+    <<: *app
+    command: ["node", "test-site/server.js"]
+    depends_on: []
+    networks:
+      default:
+        aliases: [site-a, site-b]
+
+  control-api:
+    <<: *app
+    command: ["node", "src/control-api/server.js"]
+    ports: ["${CONTROL_API_PORT:-4000}:4000"]
+
+  fetcher:
+    <<: *app
+    command: ["node", "src/fetcher/worker.js"]
+    deploy:
+      replicas: 2
+
+  parser:
+    <<: *app
+    command: ["node", "src/parser/worker.js"]
+    deploy:
+      replicas: 2
+
+  janitor:
+    <<: *app
+    command: ["node", "src/janitor/worker.js"]

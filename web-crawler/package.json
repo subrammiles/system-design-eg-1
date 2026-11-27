@@ -1,0 +1,27 @@
+{
+  "name": "web-crawler",
+  "version": "1.0.0",
+  "description": "Distributed, polite web crawler: URL frontier, domain-aware scheduling, robots.txt, URL + content dedupe (SHA-256, SimHash/LSH), adaptive recrawl",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "control-api": "node src/control-api/server.js",
+    "fetcher": "node src/fetcher/worker.js",
+    "parser": "node src/parser/worker.js",
+    "janitor": "node src/janitor/worker.js",
+    "test-site": "node test-site/server.js",
+    "init": "node scripts/init.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "cheerio": "^1.0.0",
+    "express": "^4.21.0",
+    "ioredis": "^5.4.1",
+    "undici": "^6.21.0"
+  }
+}
